@@ -1,0 +1,83 @@
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <LiquidCrystal_I2C.h>
+
+#define DHTPIN 2           // DHT11 data pin
+#define DHTTYPE DHT11      // DHT sensor type
+
+DHT dht(DHTPIN, DHTTYPE);
+
+int vibrationPin = 4;    // Digital pin for raindrop sensor
+int rainSensorPin = 3;    // Digital pin for raindrop sensor
+const int rainPin = A0;    // Analog pin for raindrop sensor
+const int vibePin = A1;    // Analog pin for vibration sensor
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);  // I2C address 0x27, 16 column and 2 rows
+
+void setup() {
+  Serial.begin(9600);
+  lcd.clear();
+  lcd.print("Wheather Station");
+  Serial.println("Wheather Station!");
+  lcd.begin(16,2);
+  dht.begin();
+}
+
+void loop() {
+  // Read sensor values
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+  int rainValue = analogRead(rainPin);
+  int vibeValue = analogRead(vibePin);
+
+  // Display values on the LCD
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("T:");
+  lcd.print(temperature);
+  lcd.print("C H:");
+  lcd.print(humidity);
+  
+  lcd.setCursor(0, 1);
+  lcd.print("R:");
+  lcd.print(rainValue);
+  lcd.print(" V:");
+  lcd.print(vibeValue);
+
+  // Send data via Bluetooth
+  Serial.print("T:");
+  Serial.print(temperature);
+  Serial.print(" H:");
+  Serial.print(humidity);
+  Serial.print(" R:");
+  Serial.print(rainValue);
+  Serial.print(" V:");
+  Serial.println(vibeValue);
+
+  int vibrationValue = digitalRead(vibrationPin);
+
+  if (vibrationValue == HIGH) {
+    Serial.println("Earthquake ALERT!");
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Earthquake ALERT!");
+    delay(500); // To avoid multiple reports in a short time
+  } else {
+    Serial.println("Earthquake Not detected");
+  }
+
+  int RainValue = digitalRead(rainSensorPin);
+
+  if (RainValue == LOW) {
+    Serial.println("RAIN ALERT!"); // Send message to Bluetooth module
+    lcd.clear();
+    lcd.setCursor(0, 1);
+    lcd.print("RAIN ALERT!");
+  } else {
+    Serial.println("NOT RAIN!");
+  }
+
+
+  delay(500);  // Adjust the delay as needed
+}
